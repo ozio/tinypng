@@ -1,7 +1,7 @@
 {
   "name": "node-tinypng",
   "version": "0.0.1",
-  "description": "TinyPNG API console application.",
+  "description": "Compress PNG with TinyPNG API in terminal.",
   "author": {
     "name": "mr.ozio",
     "email": "i@mr-ozio.ru",

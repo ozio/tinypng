@@ -1,6 +1,6 @@
-# Tinypng
+# TinyPNG
 
-Compress PNG with TinyPNG in terminal.
+Compress PNG with TinyPNG API in terminal.
 
 ## Installation
 
