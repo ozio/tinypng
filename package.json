@@ -1,0 +1,23 @@
+{
+  "name": "node-tinypng",
+  "version": "0.0.1",
+  "description": "TinyPNG API console application.",
+  "author": {
+    "name": "mr.ozio",
+    "email": "i@mr-ozio.ru",
+    "url": "http://mr-ozio.ru"
+  },
+  "main": "tinypng.js",
+  "preferGlobal": "true",
+  "bin": {
+    "tinypng": "tinypng.js"
+  },
+  "dependencies": {
+    "colors": "^0.6.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ozio/tinypng.git"
+  },
+  "keywords": ["png", "compress", "image", "tinypng", "node"]
+}
