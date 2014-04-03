@@ -2,21 +2,40 @@
 
 var fs = require('fs'),
     https = require('https'),
-    colors = require('colors');
+    colors = require('colors'),
+    pjson = require('./package.json');
 
 var options, options_path = __dirname + '/settings.json', files, files_io = [], file_count = 0;
 
+/**
+ * Get default options from settings file
+ *
+ * @returns {*}
+ */
 var getOptions = function() {
   var buffer = fs.readFileSync(options_path);
   options = JSON.parse(buffer.toString());
+  return options;
 };
 
+/**
+ * Set option whithout saving to settings file
+ *
+ * @param {string} param
+ * @param {(string|boolean)} value
+ */
 var setLocalOption = function(param, value) {
   if(typeof param !== 'undefined' && typeof value !== 'undefined') {
     options[param] = value;
   }
 };
 
+/**
+ * Set option with saving to settings file
+ *
+ * @param param
+ * @param value
+ */
 var setOption = function(param, value) {
   if(typeof param !== 'undefined' && typeof value !== 'undefined') {
     setLocalOption(param, value);
@@ -26,13 +45,12 @@ var setOption = function(param, value) {
   }
 };
 
+/**
+ * Parse command-line arguments to options and files
+ *
+ * @returns {boolean}
+ */
 var parseArgvs = function() {
-  // --api-key, -k
-  // --allow-rewrite, -r
-  // --allow-nonpng, -n
-  // --postfix, -p
-  // --help, -h
-
   var argvs = process.argv.slice(2);
 
   var checkArg = function() {
@@ -62,6 +80,12 @@ var parseArgvs = function() {
           exit();
           break;
 
+        case '-v':
+        case '--version':
+          logVersion();
+          exit();
+          break;
+
         case '-p':
         case '--postfix':
           setLocalOption('postfix', argvs[1]);
@@ -87,8 +111,15 @@ var parseArgvs = function() {
 
   checkArg();
   filterFiles();
+
+  return true;
 };
 
+/**
+ * Filter selected files from directories and wrong file extentions
+ *
+ * @returns {object}
+ */
 var filterFiles = function() {
   for(var i = 0, l = files.length; i < l; i++) {
     var file = files[i];
@@ -104,19 +135,32 @@ var filterFiles = function() {
       }
     }
   }
+
+  return files_io;
 };
 
-var postfixedName = function(file) {
-  var arr = file.split('.');
+/**
+ * Adds postfix to filename
+ *
+ * @param {string} filename
+ * @returns {string} postfixed filename
+ */
+var postfixedName = function(filename) {
+  var arr = filename.split('.');
 
   if(arr.length === 1) {
-    return file + options.postfix;
+    return filename + options.postfix;
   } else {
     arr[arr.length-2] = arr[arr.length-2] + options.postfix;
     return arr.join('.');
   }
 };
 
+/**
+ * Check API key and show warning
+ *
+ * @returns {boolean}
+ */
 var checkApiKey = function() {
   if(options.api_key === "") {
     logError("TinyPNG API key is empty. Get one from https://tinypng.com/developers, and set default key with --api-key.");
@@ -126,8 +170,11 @@ var checkApiKey = function() {
   }
 };
 
+/**
+ * Shows help message
+ */
 var logHelp = function() {
-  console.log(
+  var message =
       "\n" +
       "Usage: tinypng [options] [image.png|*.png]\n" +
       "\n" +
@@ -138,19 +185,43 @@ var logHelp = function() {
       "  --allow-rewrite, -r\tRewrite the original files with compressed data.\n" +
       "  --allow-nonpng, -n \tAllow you to compress files without .png extention.\n" +
       "  --postfix, -p      \tPostfix for compressed files when rewriting disabled.\n" +
-      "  --help, -h         \tThis message." +
-      "\n"
-  );
+      "  --help, -h         \tThis message.\n" +
+      "  --version, -v      \tShow version." +
+      "\n";
+
+  console.log(message);
 };
 
+/**
+ * Shows version
+ */
+var logVersion = function() {
+  console.log(pjson.version);
+};
+
+/**
+ * Shows error message
+ *
+ * @param {*} message
+ */
 var logError = function(message) {
   console.error('>_<'.red, message);
 };
 
+/**
+ * Shows log message
+ *
+ * @param {*} message
+ */
 var logMessage = function(message) {
   console.log('*Ü*'.green, message);
 };
 
+/**
+ * Exit from application with code
+ *
+ * @param {number} [code=0]
+ */
 var exit = function(code) {
   if(!code) {
     code = 0;
@@ -158,6 +229,11 @@ var exit = function(code) {
   process.exit(code);
 };
 
+/**
+ * Compress and save image
+ *
+ * @returns {*}
+ */
 var makeTiny = function() {
   var pair = files_io[file_count];
 
@@ -203,6 +279,10 @@ var makeTiny = function() {
   fs.createReadStream(input).pipe(request);
 };
 
+/**
+ * Initialize function
+ *
+ */
 var run = function() {
   getOptions();
   parseArgvs();

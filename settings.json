@@ -1,7 +1,6 @@
 {
-  "api_key": "",
+  "api_key": "fveZMWHOnCBaMh5SVt8wBX8naQioQFH1",
   "postfix": "_tiny",
   "allow_rewrite": false,
-  "allow_nonpng": false,
-  "colors": false
+  "allow_nonpng": false
 }
