@@ -181,12 +181,12 @@ var logHelp = function() {
       ( options.api_key === "" ? "Warning! API key is not defined.".yellow : "Current API key: " + options.api_key ) + "\n" +
       "\n" +
       "Options:\n" +
-      "  --api-key, -k      \tSet default TinyPNG API key.\n" +
-      "  --allow-rewrite, -r\tRewrite the original files with compressed data.\n" +
-      "  --allow-nonpng, -n \tAllow you to compress files without .png extention.\n" +
-      "  --postfix, -p      \tPostfix for compressed files when rewriting disabled.\n" +
-      "  --help, -h         \tThis message.\n" +
-      "  --version, -v      \tShow version." +
+      "  -k, --api-key      \tSet default TinyPNG API key.\n" +
+      "  -r, --allow-rewrite\tRewrite the original files with compressed data.\n" +
+      "  -n, --allow-nonpng \tAllow you to compress files without .png extention.\n" +
+      "  -p, --postfix      \tPostfix for compressed files when rewriting disabled.\n" +
+      "  -h, --help         \tThis message.\n" +
+      "  -v, --version      \tShow version." +
       "\n";
 
   console.log(message);
