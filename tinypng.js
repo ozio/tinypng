@@ -249,19 +249,20 @@ var exit = function(code) {
 
 /**
  * Compress and save image
+ * @param {number} offset
  * @returns {*}
  */
-var makeTiny = function() {
-  var pair = files_io[file_count];
+var makeTiny = function(offset) {
+  var pair = files_io[offset];
 
-  if(!pair) {
-    return logMessage('Compression complete!');
-  }
+//  if(!pair) {
+//    return logMessage('Compression complete!');
+//  }
 
   var input = pair[0];
   var output = pair[1];
 
-  process.stdout.write(input + " → ".grey);
+//  process.stdout.write(input + " → ".grey);
 
   var req_options = require("url").parse("https://api.tinypng.com/shrink");
   req_options.auth = "api:" + options.api_key;
@@ -274,10 +275,10 @@ var makeTiny = function() {
 
       if(d.error) {
         process.stdout.write("error".red + "\n");
-        logError(d.error + ": " + d.message);
-        exit(1);
+        logError(input + " → ".grey+d.error + ": " + d.message);
+        //exit(1);
       } else {
-        process.stdout.write("-" + ((1 - d.output.ratio) * 100).toFixed(1) + "%" + " → ".grey);
+//        process.stdout.write("-" + ((1 - d.output.ratio) * 100).toFixed(1) + "%" + " → ".grey);
       }
     });
 
@@ -285,9 +286,9 @@ var makeTiny = function() {
       https.get(res.headers.location, function(res) {
         res.pipe(fs.createWriteStream(output));
 
-        process.stdout.write(output.yellow + "\n");
+        process.stdout.write(output.yellow + " success".green + "\n");
         file_count++;
-        makeTiny();
+//        makeTiny();
       });
     }
 
@@ -304,10 +305,19 @@ var run = function() {
   getOptions();
   parseArgvs();
   checkApiKey();
-  
   if(files_io.length > 0) {
-    makeTiny();
+    console.log("start waiting··· " )
   }
+  for(var i=0,len=files_io.length;i<len;i++){
+    makeTiny(i);
+    if(file_count>=len) {
+      logMessage('Compression complete!')
+      break;
+    }
+  }
+  //if(files_io.length > 0) {
+  //  makeTiny();
+  //}
 };
 
 run();
