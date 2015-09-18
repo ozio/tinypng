@@ -1,11 +1,21 @@
-#!/usr/bin/env node
+//#!/usr/bin/env node
+'usr strick';
 
 var fs = require('fs'),
     https = require('https'),
     colors = require('colors'),
     pjson = require('./package.json');
+var path = require("path");
+var glob = require("glob");
 
-var options, options_path = __dirname + '/settings.json', files, files_io = [], file_count = 0;
+var options, 
+  options_path = __dirname + '/settings.json', 
+  files, 
+  files_io = [], 
+  file_count = 0,
+  file_success = 0,
+  regPng = /\.png/i,
+  regAll = /\.jpg|\.jpeg|\.png/i;
 
 /**
  * Get default options from settings file
@@ -96,7 +106,6 @@ var parseArgvs = function() {
           files = argvs;
           break;
       }
-
       if(!files) {
         checkArg();
       }
@@ -110,28 +119,46 @@ var parseArgvs = function() {
   }
 
   checkArg();
-  filterFiles();
+  var srcs = [];
+  files.forEach(function (item) {
+    srcs = srcs.concat(glob.sync(item));
+  });
+  files = srcs;
+  console.log(files)
+  filterFiles(files);
 
   return true;
 };
 
 /**
  * Filter selected files from directories and wrong file extentions
- *
- * @returns {object}
+ * @param {Array} files
+ * @returns {Array}
  */
-var filterFiles = function() {
+
+var filterFiles = function(files) {
   for(var i = 0, l = files.length; i < l; i++) {
-    var file = files[i];
-    if(fs.existsSync(file) && fs.statSync(file).isFile()) {
-      if ((!options.allow_nonpng && file.slice(-4) === '.png' ) || options.allow_nonpng) {
-        var pair = [ file, file ];
-
-        if(!options.allow_rewrite) {
-          pair[1] = postfixedName(file);
+    
+    var file = path.resolve(files[i] || "");
+    if(fs.existsSync(file)) {
+      if(fs.statSync(file).isFile()){
+        if ((!options.allow_nonpng && file.match(regPng) ) || (options.allow_nonpng && file.match(regAll))) {
+          var pair = [ file, file ];
+  
+          if(!options.allow_rewrite) {
+            pair[1] = postfixedName(file);
+          }
+  
+          files_io.push(pair);
         }
-
-        files_io.push(pair);
+      }
+      else if(fs.statSync(file).isDirectory()){
+        var items = fs.readdirSync(file);
+        var dir=[];
+        for(var i=0,len=items.length;i<len;i++){
+          dir.push(path.join(file, items[i]))
+        }
+        filterFiles(dir);
       }
     }
   }
@@ -181,12 +208,12 @@ var logHelp = function() {
       ( options.api_key === "" ? "Warning! API key is not defined.".yellow : "Current API key: " + options.api_key ) + "\n" +
       "\n" +
       "Options:\n" +
-      "  -k, --api-key      \tSet default TinyPNG API key.\n" +
+      "  -k, --api-key\t\tSet default TinyPNG API key.\n" +
       "  -r, --allow-rewrite\tRewrite the original files with compressed data.\n" +
       "  -n, --allow-nonpng \tAllow you to compress files without .png extention.\n" +
-      "  -p, --postfix      \tPostfix for compressed files when rewriting disabled.\n" +
-      "  -h, --help         \tThis message.\n" +
-      "  -v, --version      \tShow version." +
+      "  -p, --postfix\t\tPostfix for compressed files when rewriting disabled.\n" +
+      "  -h, --help\t\tThis message.\n" +
+      "  -v, --version\t\tShow version." +
       "\n";
 
   console.log(message);
@@ -205,7 +232,7 @@ var logVersion = function() {
  * @param {*} message
  */
 var logError = function(message) {
-  console.error('>_<'.red, message);
+  console.error('>_<'.red, message.red);
 };
 
 /**
@@ -214,7 +241,7 @@ var logError = function(message) {
  * @param {*} message
  */
 var logMessage = function(message) {
-  console.log('*Ü*'.green, message);
+  console.log('*Ü*'.green, message.green);
 };
 
 /**
@@ -231,20 +258,20 @@ var exit = function(code) {
 
 /**
  * Compress and save image
- *
+ * @param {number} offset
  * @returns {*}
  */
-var makeTiny = function() {
-  var pair = files_io[file_count];
-
-  if(!pair) {
-    return logMessage('Compression complete!');
-  }
+var makeTiny = function(offset) {
+  var pair = files_io[offset];
+  
+//  if(!pair) {
+//    return logMessage('Compression complete!');
+//  }
 
   var input = pair[0];
   var output = pair[1];
 
-  process.stdout.write(input + " → ".grey);
+//  process.stdout.write(input + " → ".grey);
 
   var req_options = require("url").parse("https://api.tinypng.com/shrink");
   req_options.auth = "api:" + options.api_key;
@@ -254,28 +281,35 @@ var makeTiny = function() {
 
     res.on('data', function(d) {
       d = JSON.parse(d);
-
       if(d.error) {
         process.stdout.write("error".red + "\n");
-        logError(d.error + ": " + d.message);
-        exit(1);
+        logError(input + " → ".grey+d.error + ": " + d.message);
+        file_count++;
+        if(file_count==files_io.length) {
+          logMessage('Total '+file_count+'files, '+file_success+' files success.');
+        }
+        //exit(1);
       } else {
-        process.stdout.write("-" + ((1 - d.output.ratio) * 100).toFixed(1) + "%" + " → ".grey);
+//        process.stdout.write("-" + ((1 - d.output.ratio) * 100).toFixed(1) + "%" + " → ".grey);
       }
     });
 
     if (res.statusCode === 201) {
       https.get(res.headers.location, function(res) {
+        
         res.pipe(fs.createWriteStream(output));
 
-        process.stdout.write(output.yellow + "\n");
+        process.stdout.write(output.yellow + " success".green + "\n");
         file_count++;
-        makeTiny();
+        file_success++;
+        if(file_count==files_io.length) {
+          logMessage('Total '+file_count+'files, '+file_success+' files success.');
+        }
       });
     }
 
   });
-
+  
   fs.createReadStream(input).pipe(request);
 };
 
@@ -287,10 +321,20 @@ var run = function() {
   getOptions();
   parseArgvs();
   checkApiKey();
-
   if(files_io.length > 0) {
-    makeTiny();
+    logMessage("start waiting··· " );
+    for(var i=0,len=files_io.length;i<len;i++){
+      makeTiny(i);
+      
+    }
   }
+  else {
+    logError("File not found.");
+  }
+  
+  //if(files_io.length > 0) {
+  //  makeTiny();
+  //}
 };
 
 run();

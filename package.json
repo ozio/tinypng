@@ -13,11 +13,46 @@
     "tinypng": "tinypng.js"
   },
   "dependencies": {
-    "colors": "^0.6.2"
+    "colors": "^0.6.2",
+    "glob" : "5.0.14"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ozio/tinypng.git"
+    "url": "git+https://github.com/ozio/tinypng.git"
   },
-  "keywords": ["png", "compress", "image", "tinypng", "node"]
+  "keywords": [
+    "png",
+    "compress",
+    "image",
+    "tinypng",
+    "node"
+  ],
+  "gitHead": "18ca3e756da0b21d110876e1742936f040fedde8",
+  "bugs": {
+    "url": "https://github.com/ozio/tinypng/issues"
+  },
+  "homepage": "https://github.com/ozio/tinypng#readme",
+  "_id": "node-tinypng@0.0.4",
+  "scripts": {},
+  "_shasum": "691c92dd248b6583dc7e91ee2e8b449f643f0240",
+  "_from": "node-tinypng@*",
+  "_npmVersion": "2.8.3",
+  "_nodeVersion": "0.12.2",
+  "_npmUser": {
+    "name": "mr_ozio",
+    "email": "i@mr-ozio.ru"
+  },
+  "dist": {
+    "shasum": "691c92dd248b6583dc7e91ee2e8b449f643f0240",
+    "tarball": "http://registry.npmjs.org/node-tinypng/-/node-tinypng-0.0.4.tgz"
+  },
+  "maintainers": [
+    {
+      "name": "mr_ozio",
+      "email": "i@mr-ozio.ru"
+    }
+  ],
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/node-tinypng/-/node-tinypng-0.0.4.tgz",
+  "readme": "ERROR: No README data found!"
 }
