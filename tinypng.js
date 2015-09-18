@@ -1,16 +1,19 @@
 //#!/usr/bin/env node
+'usr strick';
 
 var fs = require('fs'),
     https = require('https'),
     colors = require('colors'),
     pjson = require('./package.json');
 var path = require("path");
+var glob = require("glob");
 
 var options, 
   options_path = __dirname + '/settings.json', 
   files, 
   files_io = [], 
   file_count = 0,
+  file_success = 0,
   regPng = /\.png/i,
   regAll = /\.jpg|\.jpeg|\.png/i;
 
@@ -116,6 +119,12 @@ var parseArgvs = function() {
   }
 
   checkArg();
+  var srcs = [];
+  files.forEach(function (item) {
+    srcs = srcs.concat(glob.sync(item));
+  });
+  files = srcs;
+  console.log(files)
   filterFiles(files);
 
   return true;
@@ -254,7 +263,7 @@ var exit = function(code) {
  */
 var makeTiny = function(offset) {
   var pair = files_io[offset];
-
+  
 //  if(!pair) {
 //    return logMessage('Compression complete!');
 //  }
@@ -275,6 +284,10 @@ var makeTiny = function(offset) {
       if(d.error) {
         process.stdout.write("error".red + "\n");
         logError(input + " → ".grey+d.error + ": " + d.message);
+        file_count++;
+        if(file_count==files_io.length) {
+          logMessage('Total '+file_count+'files, '+file_success+' files success.');
+        }
         //exit(1);
       } else {
 //        process.stdout.write("-" + ((1 - d.output.ratio) * 100).toFixed(1) + "%" + " → ".grey);
@@ -283,12 +296,15 @@ var makeTiny = function(offset) {
 
     if (res.statusCode === 201) {
       https.get(res.headers.location, function(res) {
-        console.log(res)
+        
         res.pipe(fs.createWriteStream(output));
 
         process.stdout.write(output.yellow + " success".green + "\n");
         file_count++;
-//        makeTiny();
+        file_success++;
+        if(file_count==files_io.length) {
+          logMessage('Total '+file_count+'files, '+file_success+' files success.');
+        }
       });
     }
 
@@ -309,10 +325,7 @@ var run = function() {
     logMessage("start waiting··· " );
     for(var i=0,len=files_io.length;i<len;i++){
       makeTiny(i);
-      if(file_count>=len) {
-        logMessage('Compression complete!')
-        break;
-      }
+      
     }
   }
   else {
