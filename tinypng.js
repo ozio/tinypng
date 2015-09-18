@@ -4,8 +4,15 @@ var fs = require('fs'),
     https = require('https'),
     colors = require('colors'),
     pjson = require('./package.json');
+var path = require("path");
 
-var options, options_path = __dirname + '/settings.json', files, files_io = [], file_count = 0;
+var options, 
+  options_path = __dirname + '/settings.json', 
+  files=[], 
+  files_io = [], 
+  file_count = 0,
+  regPng = /\.png/i,
+  regAll = /\.jpg|\.jpeg|\.png/i;
 
 /**
  * Get default options from settings file
@@ -110,28 +117,39 @@ var parseArgvs = function() {
   }
 
   checkArg();
-  filterFiles();
+  filterFiles(files);
 
   return true;
 };
 
 /**
  * Filter selected files from directories and wrong file extentions
- *
- * @returns {object}
+ * @param {Array} files
+ * @returns {Array}
  */
-var filterFiles = function() {
+
+var filterFiles = function(files) {
   for(var i = 0, l = files.length; i < l; i++) {
-    var file = files[i];
-    if(fs.existsSync(file) && fs.statSync(file).isFile()) {
-      if ((!options.allow_nonpng && file.slice(-4) === '.png' ) || options.allow_nonpng) {
-        var pair = [ file, file ];
-
-        if(!options.allow_rewrite) {
-          pair[1] = postfixedName(file);
+    var file = path.resolve(files[i] || "");
+    if(fs.existsSync(file)) {
+      if(fs.statSync(file).isFile()){
+        if ((!options.allow_nonpng && file.match(regPng) ) || (options.allow_nonpng && file.match(regAll))) {
+          var pair = [ file, file ];
+  
+          if(!options.allow_rewrite) {
+            pair[1] = postfixedName(file);
+          }
+  
+          files_io.push(pair);
         }
-
-        files_io.push(pair);
+      }
+      else if(fs.statSync(file).isDirectory()){
+        var items = fs.readdirSync(file);
+        var dir=[];
+        for(var i=0,len=items.length;i<len;i++){
+          dir.push(path.join(file, items[i]))
+        }
+        filterFiles(dir);
       }
     }
   }
@@ -231,7 +249,6 @@ var exit = function(code) {
 
 /**
  * Compress and save image
- *
  * @returns {*}
  */
 var makeTiny = function() {
@@ -287,7 +304,7 @@ var run = function() {
   getOptions();
   parseArgvs();
   checkApiKey();
-
+  
   if(files_io.length > 0) {
     makeTiny();
   }
