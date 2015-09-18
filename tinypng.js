@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+//#!/usr/bin/env node
 
 var fs = require('fs'),
     https = require('https'),
@@ -8,7 +8,7 @@ var path = require("path");
 
 var options, 
   options_path = __dirname + '/settings.json', 
-  files=[], 
+  files, 
   files_io = [], 
   file_count = 0,
   regPng = /\.png/i,
@@ -103,7 +103,6 @@ var parseArgvs = function() {
           files = argvs;
           break;
       }
-
       if(!files) {
         checkArg();
       }
@@ -130,6 +129,7 @@ var parseArgvs = function() {
 
 var filterFiles = function(files) {
   for(var i = 0, l = files.length; i < l; i++) {
+    
     var file = path.resolve(files[i] || "");
     if(fs.existsSync(file)) {
       if(fs.statSync(file).isFile()){
@@ -199,12 +199,12 @@ var logHelp = function() {
       ( options.api_key === "" ? "Warning! API key is not defined.".yellow : "Current API key: " + options.api_key ) + "\n" +
       "\n" +
       "Options:\n" +
-      "  -k, --api-key      \tSet default TinyPNG API key.\n" +
+      "  -k, --api-key\t\tSet default TinyPNG API key.\n" +
       "  -r, --allow-rewrite\tRewrite the original files with compressed data.\n" +
       "  -n, --allow-nonpng \tAllow you to compress files without .png extention.\n" +
-      "  -p, --postfix      \tPostfix for compressed files when rewriting disabled.\n" +
-      "  -h, --help         \tThis message.\n" +
-      "  -v, --version      \tShow version." +
+      "  -p, --postfix\t\tPostfix for compressed files when rewriting disabled.\n" +
+      "  -h, --help\t\tThis message.\n" +
+      "  -v, --version\t\tShow version." +
       "\n";
 
   console.log(message);
@@ -223,7 +223,7 @@ var logVersion = function() {
  * @param {*} message
  */
 var logError = function(message) {
-  console.error('>_<'.red, message);
+  console.error('>_<'.red, message.red);
 };
 
 /**
@@ -232,7 +232,7 @@ var logError = function(message) {
  * @param {*} message
  */
 var logMessage = function(message) {
-  console.log('*Ü*'.green, message);
+  console.log('*Ü*'.green, message.green);
 };
 
 /**
@@ -272,7 +272,6 @@ var makeTiny = function(offset) {
 
     res.on('data', function(d) {
       d = JSON.parse(d);
-
       if(d.error) {
         process.stdout.write("error".red + "\n");
         logError(input + " → ".grey+d.error + ": " + d.message);
@@ -284,6 +283,7 @@ var makeTiny = function(offset) {
 
     if (res.statusCode === 201) {
       https.get(res.headers.location, function(res) {
+        console.log(res)
         res.pipe(fs.createWriteStream(output));
 
         process.stdout.write(output.yellow + " success".green + "\n");
@@ -293,7 +293,7 @@ var makeTiny = function(offset) {
     }
 
   });
-
+  
   fs.createReadStream(input).pipe(request);
 };
 
@@ -306,15 +306,19 @@ var run = function() {
   parseArgvs();
   checkApiKey();
   if(files_io.length > 0) {
-    console.log("start waiting··· " )
-  }
-  for(var i=0,len=files_io.length;i<len;i++){
-    makeTiny(i);
-    if(file_count>=len) {
-      logMessage('Compression complete!')
-      break;
+    logMessage("start waiting··· " );
+    for(var i=0,len=files_io.length;i<len;i++){
+      makeTiny(i);
+      if(file_count>=len) {
+        logMessage('Compression complete!')
+        break;
+      }
     }
   }
+  else {
+    logError("File not found.");
+  }
+  
   //if(files_io.length > 0) {
   //  makeTiny();
   //}
