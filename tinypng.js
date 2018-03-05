@@ -1,22 +1,29 @@
 #!/usr/bin/env node
 
-var fs = require('fs'),
-    https = require('https'),
-    colors = require('colors'),
-    pjson = require('./package.json');
+require('colors');
 
-var options, options_path = __dirname + '/settings.json', files, files_io = [], file_count = 0;
+const fs = require('fs');
+const https = require('https');
+const pjson = require('./package.json');
+
+const options_path = `${__dirname}/settings.json`;
+const files_io = [];
+
+let options;
+let files;
+let file_count = 0;
 
 /**
  * Get default options from settings file
  *
  * @returns {*}
  */
-var getOptions = function() {
-  var buffer = fs.readFileSync(options_path);
+function getOptions() {
+  const buffer = fs.readFileSync(options_path);
   options = JSON.parse(buffer.toString());
+
   return options;
-};
+}
 
 /**
  * Set option whithout saving to settings file
@@ -24,11 +31,11 @@ var getOptions = function() {
  * @param {string} param
  * @param {(string|boolean)} value
  */
-var setLocalOption = function(param, value) {
-  if(typeof param !== 'undefined' && typeof value !== 'undefined') {
+function setLocalOption(param, value) {
+  if (typeof param !== 'undefined' && typeof value !== 'undefined') {
     options[param] = value;
   }
-};
+}
 
 /**
  * Set option with saving to settings file
@@ -36,26 +43,26 @@ var setLocalOption = function(param, value) {
  * @param param
  * @param value
  */
-var setOption = function(param, value) {
-  if(typeof param !== 'undefined' && typeof value !== 'undefined') {
+function setOption(param, value) {
+  if (typeof param !== 'undefined' && typeof value !== 'undefined') {
     setLocalOption(param, value);
 
-    var write_data = JSON.stringify(options, null, 2);
+    const write_data = JSON.stringify(options, null, 2);
     fs.writeFileSync(options_path, write_data);
   }
-};
+}
 
 /**
  * Parse command-line arguments to options and files
  *
  * @returns {boolean}
  */
-var parseArgvs = function() {
-  var argvs = process.argv.slice(2);
+function parseArgvs() {
+  let argvs = process.argv.slice(2);
 
-  var checkArg = function() {
-    if(argvs[0] && argvs[0][0] === '-') {
-      switch(argvs[0]) {
+  const checkArg = function() {
+    if (argvs[0] && argvs[0][0] === '-') {
+      switch (argvs[0]) {
         case '-k':
         case '--api-key':
           setOption('api_key', argvs[1]);
@@ -97,7 +104,7 @@ var parseArgvs = function() {
           break;
       }
 
-      if(!files) {
+      if (!files) {
         checkArg();
       }
     } else {
@@ -105,7 +112,7 @@ var parseArgvs = function() {
     }
   };
 
-  if(argvs.length === 0) {
+  if (argvs.length === 0) {
     argvs[0] = '--help';
   }
 
@@ -113,21 +120,22 @@ var parseArgvs = function() {
   filterFiles();
 
   return true;
-};
+}
 
 /**
  * Filter selected files from directories and wrong file extentions
  *
  * @returns {object}
  */
-var filterFiles = function() {
-  for(var i = 0, l = files.length; i < l; i++) {
-    var file = files[i];
-    if(fs.existsSync(file) && fs.statSync(file).isFile()) {
-      if ((!options.allow_nonpng && file.slice(-4) === '.png' ) || options.allow_nonpng) {
-        var pair = [ file, file ];
+function filterFiles() {
+  for (let i = 0, l = files.length; i < l; i++) {
+    const file = files[i];
+    if (fs.existsSync(file) && fs.statSync(file)
+      .isFile()) {
+      if ((!options.allow_nonpng && file.slice(-4) === '.png') || options.allow_nonpng) {
+        const pair = [file, file];
 
-        if(!options.allow_rewrite) {
+        if (!options.allow_rewrite) {
           pair[1] = postfixedName(file);
         }
 
@@ -137,7 +145,7 @@ var filterFiles = function() {
   }
 
   return files_io;
-};
+}
 
 /**
  * Adds postfix to filename
@@ -145,122 +153,122 @@ var filterFiles = function() {
  * @param {string} filename
  * @returns {string} postfixed filename
  */
-var postfixedName = function(filename) {
-  var arr = filename.split('.');
+function postfixedName(filename) {
+  const arr = filename.split('.');
 
-  if(arr.length === 1) {
-    return filename + options.postfix;
-  } else {
-    arr[arr.length-2] = arr[arr.length-2] + options.postfix;
-    return arr.join('.');
+  if (arr.length === 1) {
+    return `${filename}${options.postfix}`;
   }
-};
+
+  arr[arr.length - 2] = `${arr[arr.length - 2]}${options.postfix}`;
+  return arr.join('.');
+}
 
 /**
  * Check API key and show warning
  *
  * @returns {boolean}
  */
-var checkApiKey = function() {
-  if(options.api_key === "") {
-    logError("TinyPNG API key is empty. Get one from https://tinypng.com/developers, and set default key with --api-key.");
+function checkApiKey() {
+  if (options.api_key === '') {
+    logError('TinyPNG API key is empty. Get one from https://tinypng.com/developers, and set default key with --api-key.');
     exit(1);
   } else {
     return true;
   }
-};
+}
 
 /**
  * Shows help message
  */
-var logHelp = function() {
-  var message =
-      "\n" +
-      "Usage: tinypng [options] [image.png|*.png]\n" +
-      "\n" +
-      ( options.api_key === "" ? "Warning! API key is not defined.".yellow : "Current API key: " + options.api_key ) + "\n" +
-      "\n" +
-      "Options:\n" +
-      "  -k, --api-key      \tSet default TinyPNG API key.\n" +
-      "  -r, --allow-rewrite\tRewrite the original files with compressed data.\n" +
-      "  -n, --allow-nonpng \tAllow you to compress files without .png extention.\n" +
-      "  -p, --postfix      \tPostfix for compressed files when rewriting disabled.\n" +
-      "  -h, --help         \tThis message.\n" +
-      "  -v, --version      \tShow version." +
-      "\n";
+function logHelp() {
+  const message = `
+Usage: tinypng [options] [image.png|*.png]
+
+${options.api_key === ''
+  ? 'Warning! API key is not defined.'.yellow
+  : `Current API key: ${options.api_key}`
+}
+
+Options:
+  -k, --api-key      \tSet default TinyPNG API key.
+  -r, --allow-rewrite\tRewrite the original files with compressed data.
+  -n, --allow-nonpng \tAllow you to compress files without .png extention.
+  -p, --postfix      \tPostfix for compressed files when rewriting disabled.
+  -h, --help         \tThis message.
+  -v, --version      \tShow version.
+`;
 
   console.log(message);
-};
+}
 
 /**
  * Shows version
  */
-var logVersion = function() {
+function logVersion() {
   console.log(pjson.version);
-};
+}
 
 /**
  * Shows error message
  *
  * @param {*} message
  */
-var logError = function(message) {
+function logError(message) {
   console.error('>_<'.red, message);
-};
+}
 
 /**
  * Shows log message
  *
  * @param {*} message
  */
-var logMessage = function(message) {
+function logMessage(message) {
   console.log('*Ü*'.green, message);
-};
+}
 
 /**
  * Exit from application with code
  *
  * @param {number} [code=0]
  */
-var exit = function(code) {
-  if(!code) {
+function exit(code) {
+  if (!code) {
     code = 0;
   }
+
   process.exit(code);
-};
+}
 
 /**
  * Compress and save image
- *
- * @returns {*}
  */
-var makeTiny = function() {
-  var pair = files_io[file_count];
+function makeTiny() {
+  let pair = files_io[file_count];
 
-  if(!pair) {
+  if (!pair) {
     return logMessage('Compression complete!');
   }
 
-  var input = pair[0];
-  var output = pair[1];
+  const input = pair[0];
+  const output = pair[1];
 
-  process.stdout.write(input + " → ".grey);
+  process.stdout.write(`${input}${' → '.grey}`);
 
-  var req_options = require("url").parse("https://api.tinypng.com/shrink");
-  req_options.auth = "api:" + options.api_key;
-  req_options.method = "POST";
+  const req_options = require('url').parse('https://api.tinypng.com/shrink');
+  req_options.auth = `api:${options.api_key}`;
+  req_options.method = 'POST';
 
-  var request = https.request(req_options, function(res) {
-
+  const request = https.request(req_options, function(res) {
     res.on('data', function(d) {
       d = JSON.parse(d);
 
-      if(d.error) {
-        process.stdout.write("error".red + "\n");
-        logError(d.error + ": " + d.message);
+      if (d.error) {
+        process.stdout.write(`${'error'.red}\n`);
+        logError(`${d.error}: ${d.message}`);
         exit(1);
       } else {
-        process.stdout.write("-" + ((1 - d.output.ratio) * 100).toFixed(1) + "%" + " → ".grey);
+        process.stdout.write(`-${((1 - d.output.ratio) * 100).toFixed(1)}%${' → '.grey}`);
       }
     });
 
@@ -268,29 +276,28 @@ var makeTiny = function() {
       https.get(res.headers.location, function(res) {
         res.pipe(fs.createWriteStream(output));
 
-        process.stdout.write(output.yellow + "\n");
+        process.stdout.write(`${output.yellow}\n`);
         file_count++;
         makeTiny();
       });
     }
-
   });
 
-  fs.createReadStream(input).pipe(request);
-};
+  fs.createReadStream(input)
+    .pipe(request);
+}
 
 /**
  * Initialize function
- *
  */
-var run = function() {
+function run() {
   getOptions();
   parseArgvs();
   checkApiKey();
 
-  if(files_io.length > 0) {
+  if (files_io.length > 0) {
     makeTiny();
   }
-};
+}
 
 run();
